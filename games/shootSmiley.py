@@ -146,7 +146,6 @@ def smiley3(posX,posY,echelle):
     #ce code sert à dessiner le nez
     fill(170,0,50)
     ellipse(250,260,80,80)
-
 def afficheSmiley():
     global posSmileyX, posSmileyY, tailleSmiley, smileyIndex, smileys
     
@@ -190,8 +189,15 @@ def compareCouleur(x,y,color):
     else:
         return False
 
+
 def testCollision():
-    global posBalleX, posBalleY, score, tailleSmiley, smileyIndex, posSmileyX, posSmileyY
+    global posBalleX, posBalleY, score, tailleSmiley, smileyIndex, posSmileyX, posSmileyY, collisionWaiter
+    #avant de dessiner la balle,vérifier qu'il n'y a rien dessous
+    #sinon cela veut dire que le smiley est touché
+    #et on met choc à True
+
+    if collisionWaiter and not collisionWaiter.ended():
+        return False
     
     centerX = posSmileyX + tailleSmiley * 200
     centerY = posSmileyY + tailleSmiley * 200
@@ -203,7 +209,13 @@ def testCollision():
     if d <= 200 * tailleSmiley:
         score += 1
         tailleSmiley = random(0.1, 0.5)
+        collisionWaiter = Wait(.5)
         smileyIndex= int(random(len(smileys)))
+    
+#     if not compareCouleur(posBalleX, posBalleY, couleurFond):#si ça n'est pas le fond
+#         score += 1
+#         tailleSmiley = random(0.1, 0.5)
+#         numero = int(random(len(smileys)))
 def afficheRaquette():
     global posRaquetteX, posRaquetteY, tailleR,couleurRaquette, konamiMode, posBalleX, vitesseBalleY, selectedMode
     global WIDTH,HEIGHT
@@ -221,11 +233,21 @@ def afficheRaquette():
         else:
             posRaquetteY = limit
     rect(posRaquetteX, posRaquetteY, tailleR, 10)
+def drawEffect():
+    global currentEffect, posBalleX, posBalleY, tailleBalle
+    if not currentEffect:
+        currentEffect = Effect()
+        randomEffect()
+    
+    currentEffect.draw()
+    
+    if currentEffect.inHitBox(posBalleX, posBalleY, tailleBalle):
+        currentEffect.useEffect()
+        randomEffect()
 def afficheBalle():
     global posBalleX, posBalleY, tailleBalle, ballCol
     fill(ballCol)
     ellipse(posBalleX, posBalleY, tailleBalle, tailleBalle)
-
 def perdu():
     global WIDTH,HEIGHT, selectedMode
     
@@ -267,7 +289,8 @@ def perdu():
 def reset():
     global score, smileyIndex, posSmileyX, posSmileyY, tailleSmiley, posBallX, posBalleY, posRaquetteX, posRaquetteY, tailleR
     global couleurRaquette, couleurRaquette, couleurBalle, vitesseBalleX, vitsseBalleY, tailleBalle, vitesseSmileyX, vitesseSmileyY
-    global couleurFond, smileys, konamiList, frmRate, konamiWaitFrames, konamiMode, jouer, loadScreened, selectedMode
+    global couleurFond, smileys, konamiList, frmRate, konamiWaitFrames, konamiMode, jouer, loadScreened, selectedMode, currentEffect
+    global collisionWaiter
     
     jouer = True
     score = 0
@@ -296,7 +319,9 @@ def reset():
     loadScreened= False
     selectedMode = None
     paused = False
-
+    randomEffect()
+    collisionWaiter = None
+    
 def pause():
     global WIDTH, HEIGHT
     
@@ -308,7 +333,21 @@ def pause():
     textSize(60)
     
     text("Pause", WIDTH / 2, HEIGHT / 3)
-  def bougeBalle():
+# Classe pour créer une attente
+class Wait():
+    def __init__(self, time: int):
+        self.frames = 0
+        self.time = time
+        self._ended = False
+
+    def check(self, frmRate):
+        if self.frames < (self.time * frmRate):
+            self.frames += 1
+        self._ended = self.frames >= self.time * frmRate
+    
+    def ended(self):
+        return self._ended
+def bougeBalle():
     global posBalleX, posBalleY, tailleBalle
     global vitesseBalleX, vitesseBalleY
     global posRaquetteX, posRaquetteY, tailleR
@@ -333,6 +372,27 @@ def pause():
             vitesseBalleX=(posBalleX-posRaquetteX-tailleR /2) / tailleR*random(30,40)
         elif posBalleY >= HEIGHT:
             jouer = False #PERDU !
+
+def balleTouchPad(*, balleY = None, balleX = None):
+    global posBalleY, posBalleX, posRaquetteX, posRaquetteY, tailleR, HEIGHT
+    x = posBalleX if not balleX else balleX
+    y = posBalleY if not balleY else balleY
+    
+    if not posBalleY > HEIGHT - 100:
+        return False
+    return x > posRaquetteX and x < posRaquetteX + tailleR and y > posRaquetteY
+    def bougeSmiley():
+    global posSmileyX, posSmileyY, tailleSmiley
+    global vitesseSmileyX, vitesseSmileyY
+    global WIDTH,HEIGHT
+    
+    posSmileyX = posSmileyX + vitesseSmileyX
+    posSmileyY = posSmileyY + vitesseSmileyY
+    
+    if (posSmileyX > WIDTH or posSmileyX < 0):
+        vitesseSmileyX = -vitesseSmileyX
+    if (posSmileyY > HEIGHT / 2 or posSmileyY < 0):
+        vitesseSmileyY = -vitesseSmileyY
 class Effect():
     def __init__(self, *, posX = int(random(0, WIDTH)), posY = int(random(0, HEIGHT)), size = 20, col = (255, 0, 0), shape = 'star'):
         self.x = posX
@@ -340,14 +400,16 @@ class Effect():
         self.size = size
         self.col = col
         self.shape = shape
-        
+        self.rotate = int(random(0, 360))
     def shapes(self):
         return ('star', 'triangle', 'losange')
     def draw(self):
         resetMatrix()
         
+        fill(self.col)
         x = self.x
         y = self.y
+        size = self.size
         
         def star(radius1 = 30, radius2= 70, npoints = 5):
             z = size / 60
@@ -369,19 +431,16 @@ class Effect():
             
         # Fonction d'un triangle
         def triangleShape():
-            rotated = radians(int(random(0, 360)))
-            rotate(rotated)
-            def randomSize(divide = False):
-                z = size // 2 if divide else size
-                return int(percent(z, int(random(80, 100))))
+            rotated = radians(self.rotate)
+#             rotate(rotated)
 
-            triangle(x, y, x + randomSize(), y, x + randomSize(True), y + randomSize())
-            rotate(rotated * -1)
+            triangle(x, y, x + size, y, x + size, y + size)
+#             rotate(rotated * -1)
             
         # Fonction d'un losange
         def diamond():
-            rotated = radians(int(random(0, 360)))
-            rotate(rotated)
+            rotated = radians(self.rotate)
+#             rotate(rotated)
                 
             top = (x, y - size * 2)
             right = (x + size, y)
@@ -395,7 +454,7 @@ class Effect():
                 
             endShape()
                 
-            rotate(rotated * -1)
+#             rotate(rotated * -1)
 
                 
         # Récupération de la méthode appropriée
@@ -405,8 +464,14 @@ class Effect():
             "losange": diamond
         }
             
-        shapes.get(shape)()
-    def useEffect():
+        shapes.get(self.shape)()
+    def inHitBox(self, x, y, size):
+        dx = x - self.x
+        dy = y - self.y
+        
+        d = sqrt(dx**2 + dy**2)
+        return d <= self.size + size
+    def useEffect(self):
         global tailleR, vitesseBalleX, vitesseBalleY, ballCol
         
         effects = ('fadeBall', 'increasePad', 'decreasePad', 'unfadeBall', 'increaseX', 'increaseY')
@@ -425,29 +490,20 @@ class Effect():
             case 'increaseY':
                 vitesseBalleY *= 1.2
             case 'fadeBall':
-                ballCol = (ballCol[0], ballCol[1], ballCol[2], 120)
+                ballCol = (ballCol[0], ballCol[1], ballCol[2], 60)
             case 'unfadeBall':
                 ballCol = (ballCol[0], ballCol[1], ballCol[2], 255)
-def balleTouchPad(*, balleY = None, balleX = None):
-    global posBalleY, posBalleX, posRaquetteX, posRaquetteY, tailleR, HEIGHT
-    x = posBalleX if not balleX else balleX
-    y = posBalleY if not balleY else balleY
+def randomEffect():
+    global currentEffect
     
-    if not posBalleY > HEIGHT - 100:
-        return False
-    return x > posRaquetteX and x < posRaquetteX + tailleR and y > posRaquetteY
-def bougeSmiley():
-    global posSmileyX, posSmileyY, tailleSmiley
-    global vitesseSmileyX, vitesseSmileyY
-    global WIDTH,HEIGHT
+    size = int(random(9, 13))
     
-    posSmileyX = posSmileyX + vitesseSmileyX
-    posSmileyY = posSmileyY + vitesseSmileyY
+    col = color(int(random(0, 255)), int(random(0, 255)), int(random(0, 255)), 255)
+    x = int(random(size * 3, WIDTH - size * 3))
+    y = int(random(size * 3, HEIGHT - size * 3))
+    shape = currentEffect.shapes()[int(random(0, len(currentEffect.shapes())))]
     
-    if (posSmileyX > WIDTH or posSmileyX < 0):
-        vitesseSmileyX = -vitesseSmileyX
-    if (posSmileyY > HEIGHT / 2 or posSmileyY < 0):
-        vitesseSmileyY = -vitesseSmileyY
+    currentEffect = Effect(posX= x, posY= y, shape= shape, col= col, size = size)
 
 #Définition des variables globales
 WIDTH = 900
@@ -481,13 +537,14 @@ selectedMode = None
 paused = False
 pauseWait = None
 ballCol = (0, 250, 250)
+currentEffect = None
+collisionWaiter = None
 
 def setup():
     global frmRate, jouer,score,WIDTH,HEIGHT
     jouer = True
     createCanvas(WIDTH, HEIGHT)    # crée une zone de dessin aux dimensions données 
     frameRate(frmRate) # à gérer
-
     
 def loadScreen():
     global selectedMode, loadScreened
@@ -527,6 +584,7 @@ def loadScreen():
         if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
             selectedMode = i
             loadScreened = True
+
 def draw():
     global jouer, score, loadScreened, paused, pauseWait, frmRate
     # on doit entrer ceci pour 
@@ -535,7 +593,9 @@ def draw():
     if not loadScreened:
         loadScreen()
         return
-    
+    if jouer:
+        handleKonami()
+        
     if pauseWait:
         pauseWait.check(frmRate)
         
@@ -550,7 +610,8 @@ def draw():
         return pause()
     
     if(jouer):
-        handleKonami()
+        if collisionWaiter:
+            collisionWaiter.check(frmRate)
         resetMatrix()
         background(0)
         afficheSmiley()
@@ -561,6 +622,7 @@ def draw():
         displayScore()
         bougeSmiley()
         bougeBalle()
+        drawEffect()
     else:
         perdu()
 
