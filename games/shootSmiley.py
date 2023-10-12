@@ -353,7 +353,34 @@ def pause():
     textSize(60)
     
     text("Pause", WIDTH / 2, HEIGHT / 3)
-    # Classe pour créer une attente
+    
+    # Détection de la souris sur le texte
+    def mouseHoverText(t, x, y):
+        length = (len(t) * 10) / 2
+        frX = x - length - 20
+        toX = x + length + 20
+        frY = y - 20
+        toY = y + 20
+        
+        return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
+    
+    t = "Rejouer"
+    x = WIDTH / 2
+    y = HEIGHT / 5
+    
+    if mouseHoverText(t, x, y):
+        fill(190, 190, 190, 200)
+    else:
+        fill(100, 100, 100, 195)
+    
+    text(t, x, y)
+
+    # Clickage du bouton et redémarrage du jeu
+    # Ce test, quand il est vérifié, implique le redémarrage total de la partie
+    if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
+        reset()
+    
+# Classe pour créer une attente
 class Wait():
     def __init__(self, time: int):
         self.frames = 0
@@ -366,7 +393,8 @@ class Wait():
         self._ended = self.frames >= self.time * frmRate
     
     def ended(self):
-        return self._ended
+        return self._ended# Bouge la balle
+
 # Bouge la balle
 def bougeBalle():
     global posBalleX, posBalleY, tailleBalle
@@ -374,7 +402,9 @@ def bougeBalle():
     global posRaquetteX, posRaquetteY, tailleR
     global jouer,WIDTH,HEIGHT, selectedMode
     
-    posBalleY = posBalleY + vitesseBalleY
+    accY = (posBalleY * .000002)
+    posBalleY = (posBalleY + vitesseBalleY)
+    posBalleY *= (1 + accY)
     
     # Dans le cas ou le joueur joue la balle
     if selectedMode == 1:
@@ -406,6 +436,7 @@ def balleTouchPad(*, balleY = None, balleX = None):
     if not posBalleY > HEIGHT - 100:
         return False
     return x > posRaquetteX and x < posRaquetteX + tailleR and y > posRaquetteY
+    
 # Bouge le smiley
 def bougeSmiley():
     global posSmileyX, posSmileyY, tailleSmiley
@@ -628,7 +659,6 @@ def loadScreen():
         if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
             selectedMode = i
             loadScreened = True
-
 def draw():
     global jouer, score, loadScreened, paused, pauseWait, frmRate
     
@@ -681,75 +711,3 @@ def draw():
 run()
 
 #
-couleurBalle = (0,255,0)
-vitesseBalleX = +5
-vitesseBalleY = -2
-tailleBalle = 15
-vitesseSmileyX = 4
-vitesseSmileyY = -4 
-couleurFond = (0,0,0)
-smileys = (smiley1, smiley2, smiley3)
-konamiList = []
-frmRate = 60
-konamiWaitFrames = 1 * frmRate
-konamiMode = False
-loadScreened = False
-selectedMode = None
-paused = False
-pauseWait = None
-ballCol = (0, 250, 250)
-currentEffect = None
-collisionWaiter = None
-
-def setup():
-    global frmRate, jouer, score, WIDTH, HEIGHT
-    jouer = True
-    createCanvas(WIDTH, HEIGHT)
-    frameRate(frmRate)
-    
-# Affichage de l'écran de chargement
-def loadScreen():
-    global selectedMode, loadScreened
-    
-    background(0)
-    
-    textAlign(CENTER)
-    textSize(45)
-    fill(255, 0, 0, 200)
-    text("CHOIX DU MODE DE JEU", WIDTH / 2, 100)
-    
-    textAlign(CENTER)
-    textSize(30)
-    middle = WIDTH / 2
-    Y = HEIGHT / 1.5
-    
-    # Textes à afficher
-    texts = ( ("Raquette", middle - WIDTH / 4, Y), ("Balle", middle + WIDTH / 4, Y) )
-    
-    # Détection du passage de la souris au dessus d'un texte
-    def mouseHoverText(t, x, y):
-        length = (len(t) * 10) / 2
-        frX = x - length - 20
-        toX = x + length + 20
-        frY = y - 20
-        toY = y + 20
-        
-        return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
-    
-    # Énumération des textes
-    for i, val in enumerate(texts):
-        t, x, y = val
-        
-        # Changement de couleur si la souris est au-dessus du texte
-        if mouseHoverText(t, x, y):
-            fill(190, 190, 190, 200)
-        else:
-            fill(100, 100, 100, 195)
-    
-        text(t, x, y)
-        
-        # Clickage du bouton et définition du mode de jeu
-        # Ce test, quand il est vérifié, implique le début de la partie
-        if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
-            selectedMode = i
-            loadScreened = True
