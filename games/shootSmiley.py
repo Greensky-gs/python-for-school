@@ -1,5 +1,5 @@
-from p5 import *
 from math import *
+from p5 import *
 from random import *
 
 def smiley1(posX,posY, scl, *, WIDTH = 500, HEIGHT = 500):
@@ -146,12 +146,15 @@ def smiley3(posX,posY,echelle):
     #ce code sert à dessiner le nez
     fill(170,0,50)
     ellipse(250,260,80,80)
+# Affiche le smiley à sa position
 def afficheSmiley():
     global posSmileyX, posSmileyY, tailleSmiley, smileyIndex, smileys
     
+    # Récupération du smiley
     emoji = smileys[smileyIndex % len(smileys)]
     
     emoji(posSmileyX, posSmileyY, tailleSmiley)
+# Affiche le score
 def displayScore():
     global score
     resetMatrix()
@@ -160,12 +163,16 @@ def displayScore():
     textSize(30)
     textAlign(LEFT)
     text(f"Score: {score}", 20, 50)
+# Gestion du code de triche
 def handleKonami():
     global konamiWaitFrames, konamiMode, konamiList, frmRate
+    
+    # Attente
     if konamiWaitFrames < frmRate * 1:
         konamiWaitFrames += 1
         return
     
+    # Clés du code
     keys = ('u', 'u', 'd', 'd', 'l', 'r', 'l', 'r', 'b', 'a')
     if keyIsPressed:
         index = len(konamiList) if len(konamiList) > 0 else 0
@@ -174,11 +181,13 @@ def handleKonami():
         if matching:
             konamiList.append(key)
             if len(konamiList) == len(keys):
+                # Activation/désactivation du code
                 konamiMode = not konamiMode
                 konamiList = []
             else:
                 konamiWaitFrames = 0
         else:
+            # Réinitialisation car mauvaise séquence
             konamiList = []
 def compareCouleur(x,y,color):
     #renvoie True si la couleur en(x,y) est égale à la couleur passée
@@ -189,19 +198,19 @@ def compareCouleur(x,y,color):
     else:
         return False
 
-
+# Vérifie la collision entre la balle et le smiley
 def testCollision():
     global posBalleX, posBalleY, score, tailleSmiley, smileyIndex, posSmileyX, posSmileyY, collisionWaiter
-    #avant de dessiner la balle,vérifier qu'il n'y a rien dessous
-    #sinon cela veut dire que le smiley est touché
-    #et on met choc à True
 
+    # Attente avant la collision
     if collisionWaiter and not collisionWaiter.ended():
         return False
     
+    # Calcul du centre du smiley
     centerX = posSmileyX + tailleSmiley * 200
     centerY = posSmileyY + tailleSmiley * 200
 
+    # Calcul de la distance
     dx = posBalleX - centerX
     dy = posBalleY - centerY
     d = sqrt(dx**2 + dy**2)
@@ -211,19 +220,17 @@ def testCollision():
         tailleSmiley = random(0.1, 0.5)
         collisionWaiter = Wait(.5)
         smileyIndex= int(random(len(smileys)))
-    
-#     if not compareCouleur(posBalleX, posBalleY, couleurFond):#si ça n'est pas le fond
-#         score += 1
-#         tailleSmiley = random(0.1, 0.5)
-#         numero = int(random(len(smileys)))
+# Affiche la raquette
 def afficheRaquette():
     global posRaquetteX, posRaquetteY, tailleR,couleurRaquette, konamiMode, posBalleX, vitesseBalleY, selectedMode
     global WIDTH,HEIGHT
+    
     fill(couleurRaquette)
     noStroke()
-    posRaquetteX = mouseX - (tailleR / 2)
+    posRaquetteX = mouseX - (tailleR / 2) # Affiche la raquette au milieu de la souris
     limit = HEIGHT * .75
     
+    # Activation du mode automatique si code de triche ou que le joueur joue la balle
     if konamiMode or selectedMode == 1:
         posRaquetteX = posBalleX - (tailleR / 2 + random(-10, 10))
         posRaquetteY = HEIGHT - 5
@@ -233,6 +240,7 @@ def afficheRaquette():
         else:
             posRaquetteY = limit
     rect(posRaquetteX, posRaquetteY, tailleR, 10)
+# Dessine la cible de bonus/malus
 def drawEffect():
     global currentEffect, posBalleX, posBalleY, tailleBalle
     if not currentEffect:
@@ -241,13 +249,16 @@ def drawEffect():
     
     currentEffect.draw()
     
+    # Vérification de la collision
     if currentEffect.inHitBox(posBalleX, posBalleY, tailleBalle):
         currentEffect.useEffect()
         randomEffect()
+# Affiche la balle
 def afficheBalle():
     global posBalleX, posBalleY, tailleBalle, ballCol
     fill(ballCol)
     ellipse(posBalleX, posBalleY, tailleBalle, tailleBalle)
+# Affichage de l'écran de fin
 def perdu():
     global WIDTH,HEIGHT, selectedMode
     
@@ -271,6 +282,7 @@ def perdu():
     
     textLength = len(playAgain) * 5
     
+    # Détection de la souris au dessus du bouton
     def mouseHoverText():
         frX = playAgainX - textLength - 20
         frY = playAgainY - 20
@@ -278,20 +290,27 @@ def perdu():
         toY = playAgainY + 20
         
         return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
+    
     if mouseHoverText():
         fill(180, 5, 5, 100)
     else:
         fill(240, 20, 20, 100)
     text(playAgain, playAgainX, playAgainY)
+    
     if mouseIsPressed and mouseHoverText():
+        # Réinitialisation, qui implique l'écran de chargement
         reset()
 
+# Réinitialisation
 def reset():
-    global score, smileyIndex, posSmileyX, posSmileyY, tailleSmiley, posBallX, posBalleY, posRaquetteX, posRaquetteY, tailleR
-    global couleurRaquette, couleurRaquette, couleurBalle, vitesseBalleX, vitsseBalleY, tailleBalle, vitesseSmileyX, vitesseSmileyY
-    global couleurFond, smileys, konamiList, frmRate, konamiWaitFrames, konamiMode, jouer, loadScreened, selectedMode, currentEffect
-    global collisionWaiter
+    # Récupération de toutes les variables
     
+    global score, smileyIndex, posSmileyX, posSmileyY, tailleSmiley, posBallX, posBalleY, posRaquetteX, posRaquetteY, tailleR
+    global couleurRaquette, couleurRaquette, couleurBalle, vitesseBalleX, vitesseBalleY, tailleBalle, vitesseSmileyX, vitesseSmileyY
+    global couleurFond, smileys, konamiList, frmRate, konamiWaitFrames, konamiMode, jouer, loadScreened, selectedMode, currentEffect
+    global collisionWaiter, ballCol
+    
+    # Réassignation des variables
     jouer = True
     score = 0
     smileyIndex = 0
@@ -304,7 +323,7 @@ def reset():
     posRaquetteY = HEIGHT-50
     tailleR = 100
     couleurRaquette = (255,0,0)
-    couleurBalle = (0,255,0)
+    ballCol = (0,255,255)
     vitesseBalleX = +5
     vitesseBalleY = -2
     tailleBalle = 15
@@ -322,6 +341,7 @@ def reset():
     randomEffect()
     collisionWaiter = None
     
+# Affiche l'écran de pause
 def pause():
     global WIDTH, HEIGHT
     
@@ -333,7 +353,7 @@ def pause():
     textSize(60)
     
     text("Pause", WIDTH / 2, HEIGHT / 3)
-# Classe pour créer une attente
+    # Classe pour créer une attente
 class Wait():
     def __init__(self, time: int):
         self.frames = 0
@@ -347,6 +367,7 @@ class Wait():
     
     def ended(self):
         return self._ended
+# Bouge la balle
 def bougeBalle():
     global posBalleX, posBalleY, tailleBalle
     global vitesseBalleX, vitesseBalleY
@@ -355,16 +376,19 @@ def bougeBalle():
     
     posBalleY = posBalleY + vitesseBalleY
     
+    # Dans le cas ou le joueur joue la balle
     if selectedMode == 1:
         posBalleX = WIDTH if mouseX > WIDTH else 0 if mouseX < 0 else mouseX
     else:
         posBalleX = posBalleX + vitesseBalleX
         if (posBalleX > WIDTH-tailleBalle or posBalleX < tailleBalle):
             vitesseBalleX = -vitesseBalleX
+            
+    # Inversement du vecteur Y si besoin
     if (posBalleY < tailleBalle):
             vitesseBalleY = -vitesseBalleY
     
-    # déplacement
+    # déplacement de la balle
     if (posBalleY > HEIGHT - 100):
         if balleTouchPad():
             #rebond sur raquette
@@ -373,6 +397,7 @@ def bougeBalle():
         elif posBalleY >= HEIGHT:
             jouer = False #PERDU !
 
+# Détecte un rebond sur la raquette
 def balleTouchPad(*, balleY = None, balleX = None):
     global posBalleY, posBalleX, posRaquetteX, posRaquetteY, tailleR, HEIGHT
     x = posBalleX if not balleX else balleX
@@ -381,7 +406,8 @@ def balleTouchPad(*, balleY = None, balleX = None):
     if not posBalleY > HEIGHT - 100:
         return False
     return x > posRaquetteX and x < posRaquetteX + tailleR and y > posRaquetteY
-    def bougeSmiley():
+# Bouge le smiley
+def bougeSmiley():
     global posSmileyX, posSmileyY, tailleSmiley
     global vitesseSmileyX, vitesseSmileyY
     global WIDTH,HEIGHT
@@ -389,10 +415,12 @@ def balleTouchPad(*, balleY = None, balleX = None):
     posSmileyX = posSmileyX + vitesseSmileyX
     posSmileyY = posSmileyY + vitesseSmileyY
     
+    # Inversion des vecteurs si besoin
     if (posSmileyX > WIDTH or posSmileyX < 0):
         vitesseSmileyX = -vitesseSmileyX
     if (posSmileyY > HEIGHT / 2 or posSmileyY < 0):
         vitesseSmileyY = -vitesseSmileyY
+# Création d'une classe effets
 class Effect():
     def __init__(self, *, posX = int(random(0, WIDTH)), posY = int(random(0, HEIGHT)), size = 20, col = (255, 0, 0), shape = 'star'):
         self.x = posX
@@ -401,8 +429,12 @@ class Effect():
         self.col = col
         self.shape = shape
         self.rotate = int(random(0, 360))
+        
+    # Renvoie la liste des formes disponibles
     def shapes(self):
         return ('star', 'triangle', 'losange')
+
+    # Dessine le bonus/malus
     def draw(self):
         resetMatrix()
         
@@ -431,17 +463,10 @@ class Effect():
             
         # Fonction d'un triangle
         def triangleShape():
-            rotated = radians(self.rotate)
-#             rotate(rotated)
-
             triangle(x, y, x + size, y, x + size, y + size)
-#             rotate(rotated * -1)
             
         # Fonction d'un losange
-        def diamond():
-            rotated = radians(self.rotate)
-#             rotate(rotated)
-                
+        def diamond():                
             top = (x, y - size * 2)
             right = (x + size, y)
             bottom = (x, y + size * 2)
@@ -454,27 +479,29 @@ class Effect():
                 
             endShape()
                 
-#             rotate(rotated * -1)
-
-                
-        # Récupération de la méthode appropriée
+        # Dictionnaire contenant les méthodes
         shapes = {
             "star": star,
             "triangle": triangleShape,
             "losange": diamond
         }
             
+        # Récupération de la méthode appropriée
         shapes.get(self.shape)()
+        
+    # Vérifie si un objet donné est dans la hitbox
     def inHitBox(self, x, y, size):
         dx = x - self.x
         dy = y - self.y
         
         d = sqrt(dx**2 + dy**2)
         return d <= self.size + size
+    
+    # Active l'effet de la classe
     def useEffect(self):
-        global tailleR, vitesseBalleX, vitesseBalleY, ballCol
+        global tailleR, vitesseBalleX, vitesseBalleY, ballCol, tailleSmiley
         
-        effects = ('fadeBall', 'increasePad', 'decreasePad', 'unfadeBall', 'increaseX', 'increaseY')
+        effects = ('fadeBall', 'increasePad', 'decreasePad', 'unfadeBall', 'increaseX', 'increaseY', 'reduceSmiley')
         effect = effects[int(random(0, len(effects)))]
         
         match effect:
@@ -486,19 +513,22 @@ class Effect():
                 else:
                     tailleR = 3
             case 'increaseX':
-                vitesseBalleX *= 1.2
+                vitesseBalleX *= 1.5
             case 'increaseY':
-                vitesseBalleY *= 1.2
+                vitesseBalleY *= 1.5
             case 'fadeBall':
                 ballCol = (ballCol[0], ballCol[1], ballCol[2], 60)
             case 'unfadeBall':
                 ballCol = (ballCol[0], ballCol[1], ballCol[2], 255)
+            case 'reduceSmiley':
+                tailleSmiley= .06
+# Définit un effet aléatoire à l'effet global
 def randomEffect():
     global currentEffect
     
     size = int(random(9, 13))
     
-    col = color(int(random(0, 255)), int(random(0, 255)), int(random(0, 255)), 255)
+    col = color(int(random(0, 220)), int(random(0, 220)), int(random(0, 220)), 255)
     x = int(random(size * 3, WIDTH - size * 3))
     y = int(random(size * 3, HEIGHT - size * 3))
     shape = currentEffect.shapes()[int(random(0, len(currentEffect.shapes())))]
@@ -541,11 +571,12 @@ currentEffect = None
 collisionWaiter = None
 
 def setup():
-    global frmRate, jouer,score,WIDTH,HEIGHT
+    global frmRate, jouer, score, WIDTH, HEIGHT
     jouer = True
-    createCanvas(WIDTH, HEIGHT)    # crée une zone de dessin aux dimensions données 
-    frameRate(frmRate) # à gérer
+    createCanvas(WIDTH, HEIGHT)
+    frameRate(frmRate)
     
+# Affichage de l'écran de chargement
 def loadScreen():
     global selectedMode, loadScreened
     
@@ -561,8 +592,10 @@ def loadScreen():
     middle = WIDTH / 2
     Y = HEIGHT / 1.5
     
+    # Textes à afficher
     texts = ( ("Raquette", middle - WIDTH / 4, Y), ("Balle", middle + WIDTH / 4, Y) )
     
+    # Détection du passage de la souris au dessus d'un texte
     def mouseHoverText(t, x, y):
         length = (len(t) * 10) / 2
         frX = x - length - 20
@@ -572,8 +605,11 @@ def loadScreen():
         
         return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
     
+    # Énumération des textes
     for i, val in enumerate(texts):
         t, x, y = val
+        
+        # Changement de couleur si la souris est au-dessus du texte
         if mouseHoverText(t, x, y):
             fill(190, 190, 190, 200)
         else:
@@ -581,34 +617,44 @@ def loadScreen():
     
         text(t, x, y)
         
+        # Clickage du bouton et définition du mode de jeu
+        # Ce test, quand il est vérifié, implique le début de la partie
         if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
             selectedMode = i
             loadScreened = True
 
 def draw():
     global jouer, score, loadScreened, paused, pauseWait, frmRate
-    # on doit entrer ceci pour 
-    # utiliser les variables globales
-
+    
+    # Affiche l'écran de chargement
     if not loadScreened:
         loadScreen()
         return
+    
+    # Gère le code konami à chaque frame (important)
     if jouer:
         handleKonami()
         
+    # Gère l'attente avant de pouvoir utiliser le bouton pause
     if pauseWait:
         pauseWait.check(frmRate)
         
-    if keyIsPressed and key == 'Pause' and jouer:        
+    # Vérification de l'activation de la pause
+    if keyIsPressed and key == 'Pause' and jouer:
+        # Vérification de l'attente si il y a un minuteur
         if pauseWait and pauseWait.ended():
             paused = not paused
             pauseWait = Wait(1)
+        # Si il n'y a pas de minuteur, inverser la pause
         if not pauseWait:
             paused = not paused
             pauseWait = Wait(1)
+    
+    # En cas de pause, afficher l'écran de pause
     if paused:
         return pause()
     
+    # La partie est en cours
     if(jouer):
         if collisionWaiter:
             collisionWaiter.check(frmRate)
@@ -623,9 +669,81 @@ def draw():
         bougeSmiley()
         bougeBalle()
         drawEffect()
-    else:
+    else: # On affiche l'écran de fin
         perdu()
 
 run()
 
 #
+couleurBalle = (0,255,0)
+vitesseBalleX = +5
+vitesseBalleY = -2
+tailleBalle = 15
+vitesseSmileyX = 4
+vitesseSmileyY = -4 
+couleurFond = (0,0,0)
+smileys = (smiley1, smiley2, smiley3)
+konamiList = []
+frmRate = 60
+konamiWaitFrames = 1 * frmRate
+konamiMode = False
+loadScreened = False
+selectedMode = None
+paused = False
+pauseWait = None
+ballCol = (0, 250, 250)
+currentEffect = None
+collisionWaiter = None
+
+def setup():
+    global frmRate, jouer, score, WIDTH, HEIGHT
+    jouer = True
+    createCanvas(WIDTH, HEIGHT)
+    frameRate(frmRate)
+    
+# Affichage de l'écran de chargement
+def loadScreen():
+    global selectedMode, loadScreened
+    
+    background(0)
+    
+    textAlign(CENTER)
+    textSize(45)
+    fill(255, 0, 0, 200)
+    text("CHOIX DU MODE DE JEU", WIDTH / 2, 100)
+    
+    textAlign(CENTER)
+    textSize(30)
+    middle = WIDTH / 2
+    Y = HEIGHT / 1.5
+    
+    # Textes à afficher
+    texts = ( ("Raquette", middle - WIDTH / 4, Y), ("Balle", middle + WIDTH / 4, Y) )
+    
+    # Détection du passage de la souris au dessus d'un texte
+    def mouseHoverText(t, x, y):
+        length = (len(t) * 10) / 2
+        frX = x - length - 20
+        toX = x + length + 20
+        frY = y - 20
+        toY = y + 20
+        
+        return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
+    
+    # Énumération des textes
+    for i, val in enumerate(texts):
+        t, x, y = val
+        
+        # Changement de couleur si la souris est au-dessus du texte
+        if mouseHoverText(t, x, y):
+            fill(190, 190, 190, 200)
+        else:
+            fill(100, 100, 100, 195)
+    
+        text(t, x, y)
+        
+        # Clickage du bouton et définition du mode de jeu
+        # Ce test, quand il est vérifié, implique le début de la partie
+        if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
+            selectedMode = i
+            loadScreened = True
