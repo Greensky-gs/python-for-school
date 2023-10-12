@@ -421,6 +421,7 @@ def bougeSmiley():
     if (posSmileyY > HEIGHT / 2 or posSmileyY < 0):
         vitesseSmileyY = -vitesseSmileyY
 # Création d'une classe effets
+# Création d'une classe effets
 class Effect():
     def __init__(self, *, posX = int(random(0, WIDTH)), posY = int(random(0, HEIGHT)), size = 20, col = (255, 0, 0), shape = 'star'):
         self.x = posX
@@ -499,9 +500,9 @@ class Effect():
     
     # Active l'effet de la classe
     def useEffect(self):
-        global tailleR, vitesseBalleX, vitesseBalleY, ballCol, tailleSmiley
+        global tailleR, vitesseBalleX, vitesseBalleY, ballCol, tailleSmiley, score
         
-        effects = ('fadeBall', 'increasePad', 'decreasePad', 'unfadeBall', 'increaseX', 'increaseY', 'reduceSmiley')
+        effects = ('fadeBall', 'increasePad', 'decreasePad', 'unfadeBall', 'increaseX', 'increaseY', 'reduceSmiley', 'addScore', 'removeScore')
         effect = effects[int(random(0, len(effects)))]
         
         match effect:
@@ -522,6 +523,11 @@ class Effect():
                 ballCol = (ballCol[0], ballCol[1], ballCol[2], 255)
             case 'reduceSmiley':
                 tailleSmiley= .06
+            case 'addScore':
+                score = int(score * 1.1)
+            case removeScore:
+                score -= int(score * .15)
+
 # Définit un effet aléatoire à l'effet global
 def randomEffect():
     global currentEffect
