@@ -404,7 +404,7 @@ def bougeBalle():
     
     accY = (posBalleY * .000002)
     posBalleY = (posBalleY + vitesseBalleY)
-    posBalleY *= (1 + accY)
+    posBalleY += accY * posBalleY
     
     # Dans le cas ou le joueur joue la balle
     if selectedMode == 1:
