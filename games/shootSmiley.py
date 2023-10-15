@@ -1,6 +1,5 @@
 from math import *
 from p5 import *
-from random import *
 
 def smiley1(posX,posY, scl, *, WIDTH = 500, HEIGHT = 500):
     resetMatrix() #réinitialise les échelles et les translates
@@ -253,7 +252,7 @@ def drawEffect():
     if currentEffect.inHitBox(posBalleX, posBalleY, tailleBalle):
         currentEffect.useEffect()
         randomEffect()
-# Affiche la balle
+        # Affiche la balle
 def afficheBalle():
     global posBalleX, posBalleY, tailleBalle, ballCol
     fill(ballCol)
@@ -305,10 +304,10 @@ def perdu():
 def reset():
     # Récupération de toutes les variables
     
-    global score, smileyIndex, posSmileyX, posSmileyY, tailleSmiley, posBallX, posBalleY, posRaquetteX, posRaquetteY, tailleR
+    global score, smileyIndex, posSmileyX, posSmileyY, tailleSmiley, posBalleX, posBalleY, posRaquetteX, posRaquetteY, tailleR
     global couleurRaquette, couleurRaquette, couleurBalle, vitesseBalleX, vitesseBalleY, tailleBalle, vitesseSmileyX, vitesseSmileyY
     global couleurFond, smileys, konamiList, frmRate, konamiWaitFrames, konamiMode, jouer, loadScreened, selectedMode, currentEffect
-    global collisionWaiter, ballCol
+    global collisionWaiter, ballCol, paused
     
     # Réassignation des variables
     jouer = True
@@ -364,9 +363,9 @@ def pause():
         
         return mouseX > frX and mouseX < toX and mouseY > frY and mouseY < toY
     
-    t = "Rejouer"
+    t = "Recommencer"
     x = WIDTH / 2
-    y = HEIGHT / 5
+    y = HEIGHT / 1.4
     
     if mouseHoverText(t, x, y):
         fill(190, 190, 190, 200)
@@ -379,7 +378,6 @@ def pause():
     # Ce test, quand il est vérifié, implique le redémarrage total de la partie
     if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
         reset()
-    
 # Classe pour créer une attente
 class Wait():
     def __init__(self, time: int):
@@ -393,8 +391,7 @@ class Wait():
         self._ended = self.frames >= self.time * frmRate
     
     def ended(self):
-        return self._ended# Bouge la balle
-
+        return self._ended
 # Bouge la balle
 def bougeBalle():
     global posBalleX, posBalleY, tailleBalle
@@ -402,7 +399,7 @@ def bougeBalle():
     global posRaquetteX, posRaquetteY, tailleR
     global jouer,WIDTH,HEIGHT, selectedMode
     
-    accY = (posBalleY * .000002)
+    accY = (posBalleY * .000008)
     posBalleY = (posBalleY + vitesseBalleY)
     posBalleY += accY * posBalleY
     
@@ -416,13 +413,13 @@ def bougeBalle():
             
     # Inversement du vecteur Y si besoin
     if (posBalleY < tailleBalle):
-            vitesseBalleY = -vitesseBalleY
+        vitesseBalleY = -vitesseBalleY
     
     # déplacement de la balle
     if (posBalleY > HEIGHT - 100):
         if balleTouchPad():
             #rebond sur raquette
-            vitesseBalleY = -vitesseBalleY+(mouseX-pmouseX)/10
+            vitesseBalleY = abs(vitesseBalleY) * -1 +(mouseX-pmouseX)/10
             vitesseBalleX=(posBalleX-posRaquetteX-tailleR /2) / tailleR*random(30,40)
         elif posBalleY >= HEIGHT:
             jouer = False #PERDU !
@@ -436,7 +433,6 @@ def balleTouchPad(*, balleY = None, balleX = None):
     if not posBalleY > HEIGHT - 100:
         return False
     return x > posRaquetteX and x < posRaquetteX + tailleR and y > posRaquetteY
-    
 # Bouge le smiley
 def bougeSmiley():
     global posSmileyX, posSmileyY, tailleSmiley
@@ -452,7 +448,83 @@ def bougeSmiley():
     if (posSmileyY > HEIGHT / 2 or posSmileyY < 0):
         vitesseSmileyY = -vitesseSmileyY
 # Création d'une classe effets
-# Création d'une classe effets
+class Effect():
+    def __init__(self, *, posX = int(random(0, WIDTH)), posY = int(random(0, HEIGHT)), size = 20, col = (255, 0, 0), shape = 'star'):
+        self.x = posX
+        self.y = posY
+        self.size = size
+        self.col = col
+        self.shape = shape
+        self.rotate = int(random(0, 360))
+        
+    # Renvoie la liste des formes disponibles
+    def shapes(self):
+        return ('star', 'triangle', 'losange')
+
+    # Dessine le bonus/malus
+    def draw(self):
+        resetMatrix()
+        
+        fill(self.col)
+        x = self.x
+        y = self.y
+        size = self.size
+        
+        def star(radius1 = 30, radius2= 70, npoints = 5):
+            z = size / 60
+            angle = TWO_PI / npoints
+            half_angle = angle/2.0
+        
+            beginShape()
+            a = 0
+            while a < TWO_PI:
+                sx = x + cos(a) * radius2 * z
+                sy = y + sin(a) * radius2 * z
+                vertex(sx, sy)
+                sx = x + cos(a+half_angle) * radius1 * z
+                sy = y + sin(a+half_angle) * radius1 * z
+                vertex(sx, sy)
+                a = a + angle
+        
+            endShape()
+            
+        # Fonction d'un triangle
+        def triangleShape():
+            triangle(x, y, x + size, y, x + size, y + size)
+            
+        # Fonction d'un losange
+        def diamond():                
+            top = (x, y - size * 2)
+            right = (x + size, y)
+            bottom = (x, y + size * 2)
+            left = (x - size, y)
+                
+            beginShape()
+                
+            for z in (top, right, bottom, left):
+                vertex(z[0], z[1])
+                
+            endShape()
+                
+        # Dictionnaire contenant les méthodes
+        shapes = {
+            "star": star,
+            "triangle": triangleShape,
+            "losange": diamond
+        }
+            
+        # Récupération de la méthode appropriée
+        shapes.get(self.shape)()
+        
+    # Vérifie si un objet donné est dans la hitbox
+    def inHitBox(self, x, y, size):
+        dx = x - self.x
+        dy = y - self.y
+        
+        d = sqrt(dx**2 + dy**2)
+        return d <= self.size + size
+    
+    # Active l'effet de la classe
 class Effect():
     def __init__(self, *, posX = int(random(0, WIDTH)), posY = int(random(0, HEIGHT)), size = 20, col = (255, 0, 0), shape = 'star'):
         self.x = posX
@@ -558,7 +630,6 @@ class Effect():
                 score = int(score * 1.1)
             case removeScore:
                 score -= int(score * .15)
-
 # Définit un effet aléatoire à l'effet global
 def randomEffect():
     global currentEffect
@@ -606,6 +677,7 @@ pauseWait = None
 ballCol = (0, 250, 250)
 currentEffect = None
 collisionWaiter = None
+firstLoaded = False
 
 def setup():
     global frmRate, jouer, score, WIDTH, HEIGHT
@@ -615,7 +687,7 @@ def setup():
     
 # Affichage de l'écran de chargement
 def loadScreen():
-    global selectedMode, loadScreened
+    global selectedMode, loadScreened, firstLoaded
     
     background(0)
     
@@ -624,13 +696,22 @@ def loadScreen():
     fill(255, 0, 0, 200)
     text("CHOIX DU MODE DE JEU", WIDTH / 2, 100)
     
+    
+    if not firstLoaded:
+        textAlign(CENTER)
+        txtSize = 15
+        textSize(txtSize)
+        fill(110, 110, 200, 255)
+        
+        text("https://github.com/Greensky-gs/python-for-school/blob/master/games/shootSmiley.py", WIDTH / 2, HEIGHT - (txtSize + 5))
+    
     textAlign(CENTER)
     textSize(30)
     middle = WIDTH / 2
     Y = HEIGHT / 1.5
     
     # Textes à afficher
-    texts = ( ("Raquette", middle - WIDTH / 4, Y), ("Balle", middle + WIDTH / 4, Y) )
+    texts = ( ("Raquette", middle - WIDTH / 4, Y), ("Balle", middle + WIDTH / 4, Y) )    
     
     # Détection du passage de la souris au dessus d'un texte
     def mouseHoverText(t, x, y):
@@ -655,10 +736,11 @@ def loadScreen():
         text(t, x, y)
         
         # Clickage du bouton et définition du mode de jeu
-        # Ce test, quand il est vérifié, implique le début de la partie
+        # Cet test, quand il est vérifié, implique le début de la partie
         if mouseIsPressed and mouseButton == LEFT and mouseHoverText(t, x, y):
             selectedMode = i
             loadScreened = True
+            firstLoaded = True
 def draw():
     global jouer, score, loadScreened, paused, pauseWait, frmRate
     
@@ -710,4 +792,4 @@ def draw():
 
 run()
 
-#
+# 
